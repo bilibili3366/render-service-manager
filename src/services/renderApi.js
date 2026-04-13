@@ -100,20 +100,23 @@ async function fetchWithRetry(url, options, { timeoutMs = API_CONFIG.TIMEOUT_MS,
  * @param {Object} account - 账户配置
  * @returns {Promise<Array>} - 服务列表
  */
-export async function getServicesForAccount(account) {
+
+async function fetchPaginatedList(account, endpoint) {
   const allItems = [];
   const seenCursors = new Set();
   let cursor = null;
 
   while (true) {
     const params = new URLSearchParams();
-    params.set('includePreviews', 'true');
     params.set('limit', API_CONFIG.PAGE_LIMIT.toString());
+    if (endpoint === '/services') {
+        params.set('includePreviews', 'true');
+    }
     if (cursor) {
       params.set('cursor', cursor);
     }
 
-    const url = `${RENDER_API_BASE}/services?${params.toString()}`;
+    const url = `${RENDER_API_BASE}${endpoint}?${params.toString()}`;
     const page = await fetchWithRetry(url, {
       headers: createHeaders(account.apiKey)
     });
@@ -142,30 +145,77 @@ export async function getServicesForAccount(account) {
     cursor = nextCursor;
   }
 
-  // 根据实际API响应转换服务，仅包含必要信息
-  // 过滤掉无效的 item 或缺少 service 字段的数据
-  return allItems
-    .filter(item => item && item.service)
-    .map(item => {
-      const service = item.service;
-      return {
-        id: service.id,
-        name: service.name,
-        type: service.type,
-        autoDeploy: service.autoDeploy,
-        autoDeployTrigger: service.autoDeployTrigger,
-        createdAt: service.createdAt,
-        updatedAt: service.updatedAt,
-        suspended: service.suspended,
-        dashboardUrl: service.dashboardUrl,
-        url: service.serviceDetails?.url,
-        region: service.serviceDetails?.region,
-        plan: service.serviceDetails?.plan,
-        env: service.serviceDetails?.env,
-        imagePath: service.imagePath,
-        ownerId: service.ownerId
-      };
-    });
+  return allItems;
+}
+
+export async function getServicesForAccount(account) {
+  const [servicesData, postgresData, redisData] = await Promise.all([
+    fetchPaginatedList(account, '/services').catch(e => { console.error(e); return []; }),
+    fetchPaginatedList(account, '/postgres').catch(e => { console.error(e); return []; }),
+    fetchPaginatedList(account, '/redis').catch(e => { console.error(e); return []; })
+  ]);
+
+  const mapService = (item) => {
+    const service = item.service;
+    if (!service) return null;
+    return {
+      id: service.id,
+      name: service.name,
+      type: service.type,
+      autoDeploy: service.autoDeploy,
+      autoDeployTrigger: service.autoDeployTrigger,
+      createdAt: service.createdAt,
+      updatedAt: service.updatedAt,
+      suspended: service.suspended,
+      dashboardUrl: service.dashboardUrl,
+      url: service.serviceDetails?.url,
+      region: service.serviceDetails?.region,
+      plan: service.serviceDetails?.plan,
+      env: service.serviceDetails?.env,
+      imagePath: service.imagePath,
+      ownerId: service.ownerId
+    };
+  };
+
+  const mapPostgres = (item) => {
+    const pg = item.postgres || item;
+    if (!pg.id) return null;
+    return {
+      id: pg.id,
+      name: pg.name,
+      type: 'postgres',
+      createdAt: pg.createdAt,
+      updatedAt: pg.updatedAt,
+      suspended: pg.suspended,
+      dashboardUrl: pg.dashboardUrl,
+      region: pg.region,
+      plan: pg.plan,
+      ownerId: pg.ownerId
+    };
+  };
+
+  const mapRedis = (item) => {
+    const redis = item.redis || item;
+    if (!redis.id) return null;
+    return {
+      id: redis.id,
+      name: redis.name,
+      type: 'redis',
+      createdAt: redis.createdAt,
+      updatedAt: redis.updatedAt,
+      region: redis.region,
+      plan: redis.plan,
+      ownerId: redis.ownerId
+    };
+  };
+
+  const allItems = [
+    ...servicesData.map(mapService).filter(Boolean),
+    ...postgresData.map(mapPostgres).filter(Boolean),
+    ...redisData.map(mapRedis).filter(Boolean)
+  ];
+
+  return allItems;
 }
 
 /**
@@ -174,12 +224,12 @@ export async function getServicesForAccount(account) {
  * @param {string} serviceId - 要部署的服务ID
  * @returns {Promise<Object>} - 部署结果
  */
-export async function triggerDeployment(account, serviceId) {
+export async function triggerDeployment(account, serviceId, options = {}) {
   const url = `${RENDER_API_BASE}/services/${encodeURIComponent(serviceId)}/deploys`;
   return await fetchWithRetry(url, {
     method: 'POST',
     headers: createHeaders(account.apiKey),
-    body: JSON.stringify({ clearCache: 'do_not_clear' })
+    body: JSON.stringify({ clearCache: options.clearCache || 'do_not_clear' })
   });
 }
 
@@ -301,7 +351,10 @@ export async function deleteEnvVarForService(account, serviceId, envVarKey) {
  * @returns {Promise<Object>} - 服务详情
  */
 export async function getServiceDetails(account, serviceId) {
-  const url = `${RENDER_API_BASE}/services/${encodeURIComponent(serviceId)}`;
+  let path = '/services';
+  if (serviceId.startsWith('dpg-')) path = '/postgres';
+  else if (serviceId.startsWith('red-')) path = '/redis';
+  const url = `${RENDER_API_BASE}${path}/${encodeURIComponent(serviceId)}`;
   return await fetchWithRetry(url, {
     headers: createHeaders(account.apiKey)
   });
@@ -314,7 +367,12 @@ export async function getServiceDetails(account, serviceId) {
  * @returns {Promise<Object>} - 操作结果
  */
 export async function suspendService(account, serviceId) {
-  const url = `${RENDER_API_BASE}/services/${encodeURIComponent(serviceId)}/suspend`;
+  if (serviceId.startsWith('red-')) {
+    throw new Error('Not Supported: Redis does not support suspend/resume/restart');
+  }
+  let path = '/services';
+  if (serviceId.startsWith('dpg-')) path = '/postgres';
+  const url = `${RENDER_API_BASE}${path}/${encodeURIComponent(serviceId)}/suspend`;
   return await fetchWithRetry(url, {
     method: 'POST',
     headers: createHeaders(account.apiKey)
@@ -328,7 +386,12 @@ export async function suspendService(account, serviceId) {
  * @returns {Promise<Object>} - 操作结果
  */
 export async function resumeService(account, serviceId) {
-  const url = `${RENDER_API_BASE}/services/${encodeURIComponent(serviceId)}/resume`;
+  if (serviceId.startsWith('red-')) {
+    throw new Error('Not Supported: Redis does not support suspend/resume/restart');
+  }
+  let path = '/services';
+  if (serviceId.startsWith('dpg-')) path = '/postgres';
+  const url = `${RENDER_API_BASE}${path}/${encodeURIComponent(serviceId)}/resume`;
   return await fetchWithRetry(url, {
     method: 'POST',
     headers: createHeaders(account.apiKey)
@@ -342,7 +405,12 @@ export async function resumeService(account, serviceId) {
  * @returns {Promise<Object>} - 操作结果
  */
 export async function restartService(account, serviceId) {
-  const url = `${RENDER_API_BASE}/services/${encodeURIComponent(serviceId)}/restart`;
+  if (serviceId.startsWith('red-')) {
+    throw new Error('Not Supported: Redis does not support suspend/resume/restart');
+  }
+  let path = '/services';
+  if (serviceId.startsWith('dpg-')) path = '/postgres';
+  const url = `${RENDER_API_BASE}${path}/${encodeURIComponent(serviceId)}/restart`;
   return await fetchWithRetry(url, {
     method: 'POST',
     headers: createHeaders(account.apiKey)
@@ -477,4 +545,67 @@ export async function testRenderApiKey(apiKey) {
     ownerName: owner.name || owner.email,
     ownerType: owner.type || 'user'
   };
+}
+
+/**
+ * Update service configuration
+ */
+export async function updateService(account, serviceId, data) {
+  const url = `${RENDER_API_BASE}/services/${encodeURIComponent(serviceId)}`;
+  return await fetchWithRetry(url, {
+    method: 'PATCH',
+    headers: createHeaders(account.apiKey),
+    body: JSON.stringify(data)
+  });
+}
+
+/**
+ * Get jobs for a service
+ */
+export async function getJobs(account, serviceId) {
+  const url = `${RENDER_API_BASE}/services/${encodeURIComponent(serviceId)}/jobs`;
+  return await fetchPaginatedList(account, `/services/${encodeURIComponent(serviceId)}/jobs`);
+}
+
+/**
+ * Create a job for a service
+ */
+export async function createJob(account, serviceId, startCommand) {
+  const url = `${RENDER_API_BASE}/services/${encodeURIComponent(serviceId)}/jobs`;
+  return await fetchWithRetry(url, {
+    method: 'POST',
+    headers: createHeaders(account.apiKey),
+    body: JSON.stringify({ startCommand })
+  });
+}
+
+/**
+ * Get custom domains for a service
+ */
+export async function getCustomDomains(account, serviceId) {
+  const url = `${RENDER_API_BASE}/services/${encodeURIComponent(serviceId)}/custom-domains`;
+  return await fetchPaginatedList(account, `/services/${encodeURIComponent(serviceId)}/custom-domains`);
+}
+
+/**
+ * Add custom domain for a service
+ */
+export async function addCustomDomain(account, serviceId, name) {
+  const url = `${RENDER_API_BASE}/services/${encodeURIComponent(serviceId)}/custom-domains`;
+  return await fetchWithRetry(url, {
+    method: 'POST',
+    headers: createHeaders(account.apiKey),
+    body: JSON.stringify({ name })
+  });
+}
+
+/**
+ * Delete custom domain for a service
+ */
+export async function deleteCustomDomain(account, serviceId, domainId) {
+  const url = `${RENDER_API_BASE}/services/${encodeURIComponent(serviceId)}/custom-domains/${encodeURIComponent(domainId)}`;
+  await fetchWithRetry(url, {
+    method: 'DELETE',
+    headers: createHeaders(account.apiKey)
+  });
 }

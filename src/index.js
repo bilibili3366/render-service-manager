@@ -14,8 +14,11 @@ import {
   handleRestartService,
   handleGetDeploys,
   handleCancelDeploy,
-  handleRollbackDeploy
+  handleRollbackDeploy,
+  handleUpdateService
 } from './handlers/serviceControl.js';
+import { handleGetJobs, handleCreateJob } from './handlers/jobs.js';
+import { handleGetCustomDomains, handleAddCustomDomain, handleDeleteCustomDomain } from './handlers/domains.js';
 import {
   handleGetInstances,
   handleGetLogs,
@@ -66,9 +69,16 @@ const dynamicRoutes = [
   { pattern: /^\/api\/env-vars\/([^\/]+)\/([^\/]+)\/(.+)$/, method: 'DELETE', handler: handleDeleteEnvVar, auth: true },
   // 服务控制路由
   { pattern: /^\/api\/services\/([^\/]+)\/([^\/]+)$/, method: 'GET', handler: handleGetServiceDetails, auth: true },
+  { pattern: /^\/api\/services\/([^\/]+)\/([^\/]+)$/, method: 'PATCH', handler: handleUpdateService, auth: true },
   { pattern: /^\/api\/services\/([^\/]+)\/([^\/]+)\/suspend$/, method: 'POST', handler: handleSuspendService, auth: true },
   { pattern: /^\/api\/services\/([^\/]+)\/([^\/]+)\/resume$/, method: 'POST', handler: handleResumeService, auth: true },
   { pattern: /^\/api\/services\/([^\/]+)\/([^\/]+)\/restart$/, method: 'POST', handler: handleRestartService, auth: true },
+  // 附加功能路由
+  { pattern: /^\/api\/jobs\/([^\/]+)\/([^\/]+)$/, method: 'GET', handler: handleGetJobs, auth: true },
+  { pattern: /^\/api\/jobs\/([^\/]+)\/([^\/]+)$/, method: 'POST', handler: handleCreateJob, auth: true },
+  { pattern: /^\/api\/domains\/([^\/]+)\/([^\/]+)$/, method: 'GET', handler: handleGetCustomDomains, auth: true },
+  { pattern: /^\/api\/domains\/([^\/]+)\/([^\/]+)$/, method: 'POST', handler: handleAddCustomDomain, auth: true },
+  { pattern: /^\/api\/domains\/([^\/]+)\/([^\/]+)\/(.+)$/, method: 'DELETE', handler: handleDeleteCustomDomain, auth: true },
   // 部署管理路由
   { pattern: /^\/api\/deploys\/([^\/]+)\/([^\/]+)$/, method: 'GET', handler: handleGetDeploys, auth: true },
   { pattern: /^\/api\/deploys\/([^\/]+)\/([^\/]+)\/cancel$/, method: 'POST', handler: handleCancelDeploy, auth: true },

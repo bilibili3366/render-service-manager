@@ -24,6 +24,9 @@ export async function handleGetEnvVars(request, match, env) {
     accountNameOrId,
     { notFoundMessage: '找不到账户', errorLogLabel: '获取环境变量出错:', errorResponseMessage: '获取环境变量失败' },
     async (account) => {
+      if (serviceId.startsWith('dpg-') || serviceId.startsWith('red-')) {
+        return jsonResponse([]);
+      }
       const envVars = await getEnvVarsForService(account, serviceId);
       return jsonResponse(envVars);
     }

@@ -317,6 +317,76 @@ export function renderDashboard() {
     </div>
   </div>
 
+
+  <!-- Jobs 模态框 -->
+  <div id="jobsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title-section">
+            <h2 class="modal-title">任务记录 (Jobs)</h2>
+            <button class="modal-close" data-action="close-jobs-modal" type="button">×</button>
+          </div>
+          <div class="modal-service-info" id="jobsModalServiceInfo">
+          </div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="add-env-var-section" style="margin-bottom: 20px;">
+          <div class="add-env-var-header">
+            <h3>运行新任务</h3>
+          </div>
+          <div class="add-env-var-form show" style="display: block;">
+            <div class="add-env-var-inputs">
+              <div class="add-env-var-field add-env-var-field-value">
+                <input type="text" id="newJobCommand" class="add-env-var-input" placeholder="输入运行命令，如 node script.js">
+              </div>
+            </div>
+            <div class="add-env-var-actions">
+              <button class="form-btn primary" data-action="create-job" type="button">执行</button>
+            </div>
+          </div>
+        </div>
+        <div id="jobsContainer" class="jobs-list">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Domains 模态框 -->
+  <div id="domainsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title-section">
+            <h2 class="modal-title">自定义域名 (Domains)</h2>
+            <button class="modal-close" data-action="close-domains-modal" type="button">×</button>
+          </div>
+          <div class="modal-service-info" id="domainsModalServiceInfo">
+          </div>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="add-env-var-section" style="margin-bottom: 20px;">
+          <div class="add-env-var-header">
+            <h3>添加自定义域名</h3>
+          </div>
+          <div class="add-env-var-form show" style="display: block;">
+            <div class="add-env-var-inputs">
+              <div class="add-env-var-field add-env-var-field-value">
+                <input type="text" id="newDomainName" class="add-env-var-input" placeholder="如 www.example.com">
+              </div>
+            </div>
+            <div class="add-env-var-actions">
+              <button class="form-btn primary" data-action="add-domain" type="button">添加</button>
+            </div>
+          </div>
+        </div>
+        <div id="domainsContainer" class="domains-list">
+        </div>
+      </div>
+    </div>
+  </div>
   <script nonce="__CSP_NONCE__">${sharedScript}\n${dashboardScript}</script>
 </body>
 </html>

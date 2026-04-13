@@ -147,7 +147,7 @@ export async function handleDeploy(request, env) {
       return jsonResponse({ error: parseError }, HTTP_STATUS.BAD_REQUEST);
     }
 
-    const { accountId, serviceId } = data || {};
+    const { accountId, serviceId, clearCache } = data || {};
 
     if (!accountId || !serviceId) {
       return jsonResponse({ error: '缺少必需参数: accountId 和 serviceId' }, HTTP_STATUS.BAD_REQUEST);
@@ -158,7 +158,7 @@ export async function handleDeploy(request, env) {
       accountId,
       { notFoundMessage: '找不到账户', errorLogLabel: '触发部署出错:', errorResponseMessage: '触发部署失败' },
       async (account) => {
-        const deployResult = await triggerDeployment(account, serviceId);
+        const deployResult = await triggerDeployment(account, serviceId, { clearCache });
         // 部署后失效对应账户的缓存
         await invalidateServicesCache(env, account.id);
         return jsonResponse(deployResult);
