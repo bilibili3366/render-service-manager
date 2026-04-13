@@ -276,49 +276,110 @@ function createServiceCard(service) {
     return btn;
   }
 
-  actions.appendChild(
-    makeActionButton(
+  
+  if (service?.id?.startsWith('srv-') || service?.id?.startsWith('dpg-') || !service?.id) {
+    const deployWrapper = document.createElement('div');
+    deployWrapper.style.display = 'inline-block';
+    deployWrapper.style.position = 'relative';
+    
+    const deployBtn = makeActionButton(
       'action-btn deploy-btn',
       'deploy',
       '部署',
       '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L13.09 8.26L18 7L16.74 12L22 13.09L15.74 14L17 19L12 17.74L7 19L8.26 14L2 13.09L8.26 12L7 7L12 8.26V2Z" fill="currentColor"/></svg>',
       service?.suspended === 'suspended'
-    )
-  );
-
-  if (service?.suspended === 'suspended') {
-    actions.appendChild(
-      makeActionButton(
-        'action-btn resume-btn',
-        'resume',
-        '恢复',
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5V19L19 12L8 5Z" fill="currentColor"/></svg>',
-        false
-      )
     );
-  } else {
+    deployWrapper.appendChild(deployBtn);
+
+    const deployDropdownBtn = document.createElement('button');
+    deployDropdownBtn.className = 'action-btn deploy-dropdown-btn';
+    deployDropdownBtn.innerHTML = '▼';
+    deployDropdownBtn.disabled = service?.suspended === 'suspended';
+    deployDropdownBtn.onclick = (e) => {
+      e.stopPropagation();
+      const menu = deployWrapper.querySelector('.deploy-menu');
+      if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    };
+    deployWrapper.appendChild(deployDropdownBtn);
+
+    const deployMenu = document.createElement('div');
+    deployMenu.className = 'deploy-menu';
+    deployMenu.style.display = 'none';
+    deployMenu.style.position = 'absolute';
+    deployMenu.style.top = '100%';
+    deployMenu.style.left = '0';
+    deployMenu.style.backgroundColor = '#1e293b';
+    deployMenu.style.border = '1px solid #334155';
+    deployMenu.style.padding = '8px';
+    deployMenu.style.zIndex = '100';
+    deployMenu.style.minWidth = '150px';
+
+    const cleanCacheLabel = document.createElement('label');
+    cleanCacheLabel.style.display = 'flex';
+    cleanCacheLabel.style.alignItems = 'center';
+    cleanCacheLabel.style.gap = '8px';
+    cleanCacheLabel.style.cursor = 'pointer';
+    
+    const cleanCacheCheckbox = document.createElement('input');
+    cleanCacheCheckbox.type = 'checkbox';
+    cleanCacheCheckbox.id = 'clearCache-' + service?.id;
+    cleanCacheCheckbox.value = 'clear';
+
+    cleanCacheLabel.appendChild(cleanCacheCheckbox);
+    cleanCacheLabel.appendChild(document.createTextNode('Deploy with Clean Cache'));
+
+    deployMenu.appendChild(cleanCacheLabel);
+    deployWrapper.appendChild(deployMenu);
+
+    // close menu on outside click
+    document.addEventListener('click', (e) => {
+      if (!deployWrapper.contains(e.target)) {
+        deployMenu.style.display = 'none';
+      }
+    });
+
+    actions.appendChild(deployWrapper);
+  }
+
+
+  
+  if (!service?.id?.startsWith('red-')) {
+    if (service?.suspended === 'suspended') {
+      actions.appendChild(
+        makeActionButton(
+          'action-btn resume-btn',
+          'resume',
+          '恢复',
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 5V19L19 12L8 5Z" fill="currentColor"/></svg>',
+          false
+        )
+      );
+    } else {
+      actions.appendChild(
+        makeActionButton(
+          'action-btn suspend-btn',
+          'suspend',
+          '暂停',
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 19H10V5H6V19ZM14 5V19H18V5H14Z" fill="currentColor"/></svg>',
+          false
+        )
+      );
+    }
+
     actions.appendChild(
       makeActionButton(
-        'action-btn suspend-btn',
-        'suspend',
-        '暂停',
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 19H10V5H6V19ZM14 5V19H18V5H14Z" fill="currentColor"/></svg>',
-        false
+        'action-btn restart-btn',
+        'restart',
+        '重启',
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4.01 7.58 4.01 12C4.01 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z" fill="currentColor"/></svg>',
+        service?.suspended === 'suspended'
       )
     );
   }
 
-  actions.appendChild(
-    makeActionButton(
-      'action-btn restart-btn',
-      'restart',
-      '重启',
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4C7.58 4 4.01 7.58 4.01 12C4.01 16.42 7.58 20 12 20C15.73 20 18.84 17.45 19.73 14H17.65C16.83 16.33 14.61 18 12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C13.66 6 15.14 6.69 16.22 7.78L13 11H20V4L17.65 6.35Z" fill="currentColor"/></svg>',
-      service?.suspended === 'suspended'
-    )
-  );
 
-  actions.appendChild(
+    if (!service?.id?.startsWith('red-')) {
+actions.appendChild(
     makeActionButton(
       'action-btn env-vars-btn',
       'env',
@@ -327,6 +388,29 @@ function createServiceCard(service) {
       false
     )
   );
+  }
+
+  if (service?.id?.startsWith('srv-')) {
+    actions.appendChild(
+      makeActionButton(
+        'action-btn jobs-btn',
+        'jobs',
+        '任务',
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6C4.9 2 4.01 2.9 4.01 4L4 20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM16 18H8V16H16V18ZM16 14H8V12H16V14ZM13 9V3.5L18.5 9H13Z" fill="currentColor"/></svg>',
+        false
+      )
+    );
+    actions.appendChild(
+      makeActionButton(
+        'action-btn domains-btn',
+        'domains',
+        '域名',
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.99 2C6.47 2 2 6.48 2 12S6.47 22 11.99 22C17.52 22 22 17.52 22 12S17.52 2 11.99 2ZM18.92 8H15.97C15.65 6.47 15.11 5.07 14.39 3.84C16.32 4.54 17.9 5.95 18.92 8ZM12 4.04C12.83 5.25 13.48 6.58 13.91 8H10.09C10.52 6.58 11.17 5.25 12 4.04ZM4.26 14C4.09 13.36 4 12.69 4 12C4 11.31 4.09 10.64 4.26 10H7.64C7.56 10.66 7.5 11.32 7.5 12C7.5 12.68 7.56 13.34 7.64 14H4.26ZM5.08 16H8.03C8.35 17.53 8.89 18.93 9.61 20.16C7.68 19.46 6.1 18.05 5.08 16ZM8.03 8H5.08C6.1 6.05 7.68 4.54 9.61 3.84C8.89 5.07 8.35 6.47 8.03 8ZM12 19.96C11.17 18.75 10.52 17.42 10.09 16H13.91C13.48 17.42 12.83 18.75 12 19.96ZM14.36 14H9.64C9.56 13.34 9.5 12.68 9.5 12C9.5 11.32 9.56 10.66 9.64 10H14.36C14.44 10.66 14.5 11.32 14.5 12C14.5 12.68 14.44 13.34 14.36 14ZM14.39 20.16C15.11 18.93 15.65 17.53 15.97 16H18.92C17.9 18.05 16.32 19.46 14.39 20.16ZM16.36 14C16.44 13.34 16.5 12.68 16.5 12C16.5 11.32 16.44 10.66 16.36 10H19.74C19.91 10.64 20 11.31 20 12C20 12.69 19.91 13.36 19.74 14H16.36Z" fill="currentColor"/></svg>',
+        false
+      )
+    );
+  }
+
 
   // 第二排按钮顺序: instances, deploys, events, logs
   actions.appendChild(
@@ -432,6 +516,9 @@ function applyFilters() {
 
 // 部署服务
 async function deployService(accountId, serviceId, serviceName) {
+  const clearCacheCheckbox = document.getElementById('clearCache-' + serviceId);
+  const clearCache = clearCacheCheckbox && clearCacheCheckbox.checked ? 'clear' : 'do_not_clear';
+
   if (!confirm(\`确定要部署 \${serviceName}?\`)) {
     return;
   }
@@ -441,6 +528,7 @@ async function deployService(accountId, serviceId, serviceName) {
       method: 'POST',
       body: {
         accountId: accountId,
+        clearCache: clearCache,
         serviceId: serviceId
       }
     });
@@ -1557,6 +1645,12 @@ function initEventDelegation() {
       case 'events':
         await openEventsModal(payload.accountId, payload.serviceId, payload.serviceName);
         break;
+      case 'jobs':
+        await openJobsModal(payload.accountId, payload.serviceId, payload.serviceName);
+        break;
+      case 'domains':
+        await openDomainsModal(payload.accountId, payload.serviceId, payload.serviceName);
+        break;
       default:
         break;
     }
@@ -1568,6 +1662,20 @@ function initEventDelegation() {
     if (!actionElement) return;
 
     const action = actionElement.dataset.action;
+
+    
+    if (action === 'create-job') {
+      createJob();
+      return;
+    }
+    if (action === 'add-domain') {
+      addDomain();
+      return;
+    }
+    if (action === 'delete-domain') {
+      deleteDomain(actionElement.dataset.domainId);
+      return;
+    }
 
     if (action === 'cancel-deploy' || action === 'rollback-deploy') {
       const deployId = actionElement.dataset.deployId;
@@ -1635,6 +1743,8 @@ function initEventDelegation() {
     'close-deploys-modal': closeDeploysModal,
     'close-logs-modal': closeLogsModal,
     'close-instances-modal': closeInstancesModal,
+    'close-jobs-modal': closeJobsModal,
+    'close-domains-modal': closeDomainsModal,
   };
 
   document.addEventListener('click', async (event) => {
@@ -1786,6 +1896,8 @@ document.addEventListener('keydown', function(event) {
   const deploysModal = document.getElementById('deploysModal');
   const logsModal = document.getElementById('logsModal');
   const instancesModal = document.getElementById('instancesModal');
+  const jobsModal = document.getElementById('jobsModal');
+  const domainsModal = document.getElementById('domainsModal');
 
   if (envVarsModal.classList.contains('show')) {
     if (editingKey) {
@@ -1801,6 +1913,10 @@ document.addEventListener('keydown', function(event) {
     closeLogsModal();
   } else if (instancesModal.classList.contains('show')) {
     closeInstancesModal();
+  } else if (jobsModal.classList.contains('show')) {
+    closeJobsModal();
+  } else if (domainsModal.classList.contains('show')) {
+    closeDomainsModal();
   }
 });
 
@@ -1811,8 +1927,14 @@ document.addEventListener('click', function(event) {
   const deploysModal = document.getElementById('deploysModal');
   const logsModal = document.getElementById('logsModal');
   const instancesModal = document.getElementById('instancesModal');
+  const jobsModal = document.getElementById('jobsModal');
+  const domainsModal = document.getElementById('domainsModal');
 
-  if (event.target === envVarsModal) {
+  if (event.target === jobsModal) {
+    closeJobsModal();
+  } else if (event.target === domainsModal) {
+    closeDomainsModal();
+  } else if (event.target === envVarsModal) {
     closeEnvVarsModal();
   } else if (event.target === eventsModal) {
     closeEventsModal();
@@ -1839,3 +1961,224 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 `;
+
+
+
+// Jobs
+let currentJobsAccountId = '';
+let currentJobsServiceId = '';
+let currentJobsServiceName = '';
+
+async function openJobsModal(accountId, serviceId, serviceName) {
+  lockBodyScroll();
+  const modal = document.getElementById('jobsModal');
+  const container = document.getElementById('jobsContainer');
+  const serviceInfo = document.getElementById('jobsModalServiceInfo');
+
+  currentJobsAccountId = accountId;
+  currentJobsServiceId = serviceId;
+  currentJobsServiceName = serviceName;
+
+  const accountName = allServices.find(s => s.id === serviceId && s.accountId === accountId)?.accountName || accountId;
+  serviceInfo.replaceChildren(
+    document.createTextNode('查看 '),
+    (() => {
+      const strong = document.createElement('strong');
+      strong.textContent = serviceName;
+      return strong;
+    })(),
+    document.createTextNode(' (' + accountName + ') 的任务记录')
+  );
+
+  container.innerHTML = '<div class="loading" style="padding: 2rem;"><div class="loading-spinner"></div><p>加载任务记录中...</p></div>';
+
+  modal.classList.add('show');
+
+  try {
+    const jobs = await apiJson(`/api/jobs/${accountId}/${serviceId}`);
+    renderJobs(jobs);
+  } catch (error) {
+    console.error('获取任务记录出错:', error);
+    container.innerHTML = `
+      <div class="empty-state">
+        <h3>加载任务记录出错</h3>
+        <p>${escapeHtml(error?.message || String(error))}</p>
+      </div>
+    `;
+  }
+}
+
+function renderJobs(jobs) {
+  const container = document.getElementById('jobsContainer');
+  
+  if (!jobs || jobs.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h3>没有任务记录</h3>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = '';
+  jobs.forEach(item => {
+    const job = item.job || item;
+    const div = document.createElement('div');
+    div.className = 'event-item';
+    div.innerHTML = `
+      <div><strong>ID:</strong> ${escapeHtml(job.id)}</div>
+      <div><strong>命令:</strong> <code>${escapeHtml(job.startCommand)}</code></div>
+      <div><strong>状态:</strong> ${escapeHtml(job.status)}</div>
+      <div><strong>时间:</strong> ${new Date(job.createdAt).toLocaleString('zh-CN')}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function closeJobsModal() {
+  unlockBodyScroll();
+  const modal = document.getElementById('jobsModal');
+  modal.classList.remove('show');
+}
+
+async function createJob() {
+  const command = document.getElementById('newJobCommand').value.trim();
+  if (!command) return;
+
+  try {
+    await apiJson(`/api/jobs/${currentJobsAccountId}/${currentJobsServiceId}`, {
+      method: 'POST',
+      body: { startCommand: command }
+    });
+    showNotification('任务创建成功', 'success');
+    document.getElementById('newJobCommand').value = '';
+    
+    // refresh
+    const jobs = await apiJson(`/api/jobs/${currentJobsAccountId}/${currentJobsServiceId}`);
+    renderJobs(jobs);
+  } catch (error) {
+    console.error('创建任务出错:', error);
+    showNotification('创建任务出错: ' + (error?.message || String(error)), 'error');
+  }
+}
+
+// Domains
+let currentDomainsAccountId = '';
+let currentDomainsServiceId = '';
+let currentDomainsServiceName = '';
+
+async function openDomainsModal(accountId, serviceId, serviceName) {
+  lockBodyScroll();
+  const modal = document.getElementById('domainsModal');
+  const container = document.getElementById('domainsContainer');
+  const serviceInfo = document.getElementById('domainsModalServiceInfo');
+
+  currentDomainsAccountId = accountId;
+  currentDomainsServiceId = serviceId;
+  currentDomainsServiceName = serviceName;
+
+  const accountName = allServices.find(s => s.id === serviceId && s.accountId === accountId)?.accountName || accountId;
+  serviceInfo.replaceChildren(
+    document.createTextNode('查看 '),
+    (() => {
+      const strong = document.createElement('strong');
+      strong.textContent = serviceName;
+      return strong;
+    })(),
+    document.createTextNode(' (' + accountName + ') 的自定义域名')
+  );
+
+  container.innerHTML = '<div class="loading" style="padding: 2rem;"><div class="loading-spinner"></div><p>加载域名中...</p></div>';
+
+  modal.classList.add('show');
+
+  try {
+    const domains = await apiJson(`/api/domains/${accountId}/${serviceId}`);
+    renderDomains(domains);
+  } catch (error) {
+    console.error('获取域名出错:', error);
+    container.innerHTML = `
+      <div class="empty-state">
+        <h3>加载域名出错</h3>
+        <p>${escapeHtml(error?.message || String(error))}</p>
+      </div>
+    `;
+  }
+}
+
+function renderDomains(domains) {
+  const container = document.getElementById('domainsContainer');
+  
+  if (!domains || domains.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h3>没有自定义域名</h3>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = '';
+  domains.forEach(item => {
+    const domain = item.customDomain || item;
+    const div = document.createElement('div');
+    div.className = 'env-var-item';
+    div.innerHTML = `
+      <div class="env-var-grid" style="align-items: center;">
+        <div class="env-var-key">${escapeHtml(domain.name)}</div>
+        <div>状态: ${escapeHtml(domain.status || 'unknown')}</div>
+        <div class="env-var-actions">
+          <button class="env-var-btn delete-btn" data-action="delete-domain" data-domain-id="${escapeHtml(domain.id)}">删除</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function closeDomainsModal() {
+  unlockBodyScroll();
+  const modal = document.getElementById('domainsModal');
+  modal.classList.remove('show');
+}
+
+async function addDomain() {
+  const name = document.getElementById('newDomainName').value.trim();
+  if (!name) return;
+
+  try {
+    await apiJson(`/api/domains/${currentDomainsAccountId}/${currentDomainsServiceId}`, {
+      method: 'POST',
+      body: { name }
+    });
+    showNotification('域名添加成功', 'success');
+    document.getElementById('newDomainName').value = '';
+    
+    // refresh
+    const domains = await apiJson(`/api/domains/${currentDomainsAccountId}/${currentDomainsServiceId}`);
+    renderDomains(domains);
+  } catch (error) {
+    console.error('添加域名出错:', error);
+    showNotification('添加域名出错: ' + (error?.message || String(error)), 'error');
+  }
+}
+
+async function deleteDomain(domainId) {
+  if (!confirm('确定要删除此域名吗？')) return;
+
+  try {
+    await apiJson(`/api/domains/${currentDomainsAccountId}/${currentDomainsServiceId}/${domainId}`, {
+      method: 'DELETE',
+      contentType: null
+    });
+    showNotification('域名删除成功', 'success');
+    
+    // refresh
+    const domains = await apiJson(`/api/domains/${currentDomainsAccountId}/${currentDomainsServiceId}`);
+    renderDomains(domains);
+  } catch (error) {
+    console.error('删除域名出错:', error);
+    showNotification('删除域名出错: ' + (error?.message || String(error)), 'error');
+  }
+}
+

@@ -7,10 +7,13 @@ import {
   restartService,
   getDeploysForService,
   cancelDeploy,
-  rollbackDeploy
+  rollbackDeploy,
+  updateService
 } from '../services/renderApi.js';
 import { invalidateServicesCache } from '../services/cache.js';
 import { VALIDATION_CONFIG } from '../config/constants.js';
+import { safeParseJson } from '../utils/helpers.js';
+import { HTTP_STATUS } from '../config/constants.js';
 
 /**
  * 创建服务控制 handler 工厂函数
@@ -151,3 +154,31 @@ export const handleRollbackDeploy = createDeployControlHandler(
   '回滚部署失败:',
   '已回滚到此部署'
 );
+
+/**
+ * Handle update service
+ */
+export async function handleUpdateService(request, match, env) {
+  const [, accountId, serviceId] = match;
+
+  try {
+    const { data, error: parseError } = await safeParseJson(request);
+    if (parseError) {
+      return jsonResponse({ error: parseError }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    return withAccount(
+      env,
+      accountId,
+      { notFoundMessage: '账户不存在', errorLogLabel: '更新服务失败:', errorResponseMessage: null },
+      async (account) => {
+        const result = await updateService(account, serviceId, data);
+        await invalidateServicesCache(env, account.id);
+        return jsonResponse({ success: true, data: result });
+      }
+    );
+  } catch (error) {
+    console.error('Update Service Error:', error);
+    return jsonResponse({ error: 'Failed to update service' }, HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  }
+}
