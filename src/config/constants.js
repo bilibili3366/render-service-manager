@@ -36,7 +36,7 @@ export const KV_KEYS = {
 
 // 登录防暴力配置
 export const LOGIN_RATE_LIMIT = {
-  MAX_ATTEMPTS: 5,
+  MAX_ATTEMPTS: 15,
   WINDOW_SECONDS: 15 * 60,
   BASE_LOCK_SECONDS: 5 * 60,
   MAX_LOCK_SECONDS: 60 * 60,
