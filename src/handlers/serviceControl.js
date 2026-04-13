@@ -27,6 +27,10 @@ function createServiceControlHandler(apiFn, errorLogLabel, successMessage, inval
   return async (request, match, env) => {
     const [, accountId, serviceId] = match;
 
+    if (serviceId.startsWith('red-')) {
+      return jsonResponse({ error: 'Not Supported: Redis does not support this action' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
     return withAccount(
       env,
       accountId,
