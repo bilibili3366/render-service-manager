@@ -1960,7 +1960,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
-`;
 
 
 
@@ -1995,16 +1994,16 @@ async function openJobsModal(accountId, serviceId, serviceName) {
   modal.classList.add('show');
 
   try {
-    const jobs = await apiJson(`/api/jobs/${accountId}/${serviceId}`);
+    const jobs = await apiJson(\`/api/jobs/\${accountId}/\${serviceId}\`);
     renderJobs(jobs);
   } catch (error) {
     console.error('获取任务记录出错:', error);
-    container.innerHTML = `
+    container.innerHTML = \`
       <div class="empty-state">
         <h3>加载任务记录出错</h3>
-        <p>${escapeHtml(error?.message || String(error))}</p>
+        <p>\${escapeHtml(error?.message || String(error))}</p>
       </div>
-    `;
+    \`;
   }
 }
 
@@ -2012,11 +2011,11 @@ function renderJobs(jobs) {
   const container = document.getElementById('jobsContainer');
   
   if (!jobs || jobs.length === 0) {
-    container.innerHTML = `
+    container.innerHTML = \`
       <div class="empty-state">
         <h3>没有任务记录</h3>
       </div>
-    `;
+    \`;
     return;
   }
 
@@ -2025,12 +2024,12 @@ function renderJobs(jobs) {
     const job = item.job || item;
     const div = document.createElement('div');
     div.className = 'event-item';
-    div.innerHTML = `
-      <div><strong>ID:</strong> ${escapeHtml(job.id)}</div>
-      <div><strong>命令:</strong> <code>${escapeHtml(job.startCommand)}</code></div>
-      <div><strong>状态:</strong> ${escapeHtml(job.status)}</div>
-      <div><strong>时间:</strong> ${new Date(job.createdAt).toLocaleString('zh-CN')}</div>
-    `;
+    div.innerHTML = \`
+      <div><strong>ID:</strong> \${escapeHtml(job.id)}</div>
+      <div><strong>命令:</strong> <code>\${escapeHtml(job.startCommand)}</code></div>
+      <div><strong>状态:</strong> \${escapeHtml(job.status)}</div>
+      <div><strong>时间:</strong> \${new Date(job.createdAt).toLocaleString('zh-CN')}</div>
+    \`;
     container.appendChild(div);
   });
 }
@@ -2046,7 +2045,7 @@ async function createJob() {
   if (!command) return;
 
   try {
-    await apiJson(`/api/jobs/${currentJobsAccountId}/${currentJobsServiceId}`, {
+    await apiJson(\`/api/jobs/\${currentJobsAccountId}/\${currentJobsServiceId}\`, {
       method: 'POST',
       body: { startCommand: command }
     });
@@ -2054,7 +2053,7 @@ async function createJob() {
     document.getElementById('newJobCommand').value = '';
     
     // refresh
-    const jobs = await apiJson(`/api/jobs/${currentJobsAccountId}/${currentJobsServiceId}`);
+    const jobs = await apiJson(\`/api/jobs/\${currentJobsAccountId}/\${currentJobsServiceId}\`);
     renderJobs(jobs);
   } catch (error) {
     console.error('创建任务出错:', error);
@@ -2093,16 +2092,16 @@ async function openDomainsModal(accountId, serviceId, serviceName) {
   modal.classList.add('show');
 
   try {
-    const domains = await apiJson(`/api/domains/${accountId}/${serviceId}`);
+    const domains = await apiJson(\`/api/domains/\${accountId}/\${serviceId}\`);
     renderDomains(domains);
   } catch (error) {
     console.error('获取域名出错:', error);
-    container.innerHTML = `
+    container.innerHTML = \`
       <div class="empty-state">
         <h3>加载域名出错</h3>
-        <p>${escapeHtml(error?.message || String(error))}</p>
+        <p>\${escapeHtml(error?.message || String(error))}</p>
       </div>
-    `;
+    \`;
   }
 }
 
@@ -2110,11 +2109,11 @@ function renderDomains(domains) {
   const container = document.getElementById('domainsContainer');
   
   if (!domains || domains.length === 0) {
-    container.innerHTML = `
+    container.innerHTML = \`
       <div class="empty-state">
         <h3>没有自定义域名</h3>
       </div>
-    `;
+    \`;
     return;
   }
 
@@ -2123,15 +2122,15 @@ function renderDomains(domains) {
     const domain = item.customDomain || item;
     const div = document.createElement('div');
     div.className = 'env-var-item';
-    div.innerHTML = `
+    div.innerHTML = \`
       <div class="env-var-grid" style="align-items: center;">
-        <div class="env-var-key">${escapeHtml(domain.name)}</div>
-        <div>状态: ${escapeHtml(domain.status || 'unknown')}</div>
+        <div class="env-var-key">\${escapeHtml(domain.name)}</div>
+        <div>状态: \${escapeHtml(domain.status || 'unknown')}</div>
         <div class="env-var-actions">
-          <button class="env-var-btn delete-btn" data-action="delete-domain" data-domain-id="${escapeHtml(domain.id)}">删除</button>
+          <button class="env-var-btn delete-btn" data-action="delete-domain" data-domain-id="\${escapeHtml(domain.id)}">删除</button>
         </div>
       </div>
-    `;
+    \`;
     container.appendChild(div);
   });
 }
@@ -2147,7 +2146,7 @@ async function addDomain() {
   if (!name) return;
 
   try {
-    await apiJson(`/api/domains/${currentDomainsAccountId}/${currentDomainsServiceId}`, {
+    await apiJson(\`/api/domains/\${currentDomainsAccountId}/\${currentDomainsServiceId}\`, {
       method: 'POST',
       body: { name }
     });
@@ -2155,7 +2154,7 @@ async function addDomain() {
     document.getElementById('newDomainName').value = '';
     
     // refresh
-    const domains = await apiJson(`/api/domains/${currentDomainsAccountId}/${currentDomainsServiceId}`);
+    const domains = await apiJson(\`/api/domains/\${currentDomainsAccountId}/\${currentDomainsServiceId}\`);
     renderDomains(domains);
   } catch (error) {
     console.error('添加域名出错:', error);
@@ -2167,14 +2166,14 @@ async function deleteDomain(domainId) {
   if (!confirm('确定要删除此域名吗？')) return;
 
   try {
-    await apiJson(`/api/domains/${currentDomainsAccountId}/${currentDomainsServiceId}/${domainId}`, {
+    await apiJson(\`/api/domains/\${currentDomainsAccountId}/\${currentDomainsServiceId}/\${domainId}\`, {
       method: 'DELETE',
       contentType: null
     });
     showNotification('域名删除成功', 'success');
     
     // refresh
-    const domains = await apiJson(`/api/domains/${currentDomainsAccountId}/${currentDomainsServiceId}`);
+    const domains = await apiJson(\`/api/domains/\${currentDomainsAccountId}/\${currentDomainsServiceId}\`);
     renderDomains(domains);
   } catch (error) {
     console.error('删除域名出错:', error);
@@ -2182,3 +2181,4 @@ async function deleteDomain(domainId) {
   }
 }
 
+`;
