@@ -1737,16 +1737,6 @@ function initEventDelegation() {
     handleEditorKeyDown(event, key);
   });
 
-  const closeHandlers = {
-    'close-env-vars-modal': closeEnvVarsModal,
-    'close-events-modal': closeEventsModal,
-    'close-deploys-modal': closeDeploysModal,
-    'close-logs-modal': closeLogsModal,
-    'close-instances-modal': closeInstancesModal,
-    'close-jobs-modal': closeJobsModal,
-    'close-domains-modal': closeDomainsModal,
-  };
-
   document.addEventListener('click', async (event) => {
     const actionElement = event.target.closest('[data-action]');
     if (!actionElement) return;
@@ -1769,10 +1759,13 @@ function initEventDelegation() {
       return;
     }
 
-    const closeHandler = closeHandlers[action];
-    if (closeHandler) {
-      closeHandler();
-    }
+    if (action === 'close-env-vars-modal') return closeEnvVarsModal();
+    if (action === 'close-events-modal') return closeEventsModal();
+    if (action === 'close-deploys-modal') return closeDeploysModal();
+    if (action === 'close-logs-modal') return closeLogsModal();
+    if (action === 'close-instances-modal') return closeInstancesModal();
+    if (action === 'close-jobs-modal') return closeJobsModal();
+    if (action === 'close-domains-modal') return closeDomainsModal();
   });
 
   const accountFilter = document.getElementById('accountFilter');
